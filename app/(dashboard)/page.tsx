@@ -1,8 +1,11 @@
+"use client";
+
 import {
-  CircleDollarSign,
-  DollarSign,
+  Activity,
   PackageIcon,
   ShoppingBagIcon,
+  TableColumnsSplit,
+  User,
 } from "lucide-react";
 import Header, {
   HeaderLeft,
@@ -10,17 +13,44 @@ import Header, {
   HeaderSubtitle,
   HeaderTitle,
 } from "../_components/header";
-import { Button } from "../_components/ui/button";
 import {
   SummaryCard,
   SummaryCardIcon,
   SummaryCardTitle,
   SummaryCardValue,
 } from "./_components/summary-card";
-import { getTotalSales } from "../_data-access/dashboard/get-dashboard";
+import { ComboboxUsers } from "./_components/combobox-users";
+import { useEffect, useState } from "react";
 
-export default async function Home() {
-  const totalSales = await getTotalSales();
+export default function Home() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [totalCaixas, setTotalCaixas] = useState(0);
+  const [totalTasks, setTotalTasks] = useState(0);
+  const [mostFrequentWorkLocation, setMostFrequentWorkLocation] = useState("");
+  const [userName, setUserName] = useState("Selecione um usuário");
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchUserData = async () => {
+      try {
+        const res = await fetch(`/api/dashboard?userId=${userId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Erro ao buscar os dados do dashbaord");
+        }
+        setTotalCaixas(data.allRecords.length);
+        setTotalTasks(data.taskCount);
+        setMostFrequentWorkLocation(data.mostWorkedLocation);
+      } catch (error) {
+        console.error("Erro ao buscar dados do usuário:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
   return (
     <div className="bg-white-500 w-full space-y-8 p-8">
       <Header>
@@ -29,45 +59,51 @@ export default async function Home() {
           <HeaderTitle>Dashboard</HeaderTitle>
         </HeaderLeft>
         <HeaderRight>
-          <Button>Adicionar</Button>
+          {/* Componente de calendário */}
+          <ComboboxUsers
+            onUserSelect={(id, name) => {
+              setUserId(id);
+              setUserName(name);
+            }}
+          />
         </HeaderRight>
       </Header>
 
       <div className="grid grid-cols-2 gap-6">
         <SummaryCard>
           <SummaryCardIcon>
-            <DollarSign />
+            <PackageIcon />
           </SummaryCardIcon>
-          <SummaryCardTitle>Total de vendas</SummaryCardTitle>
-          <SummaryCardValue>
-            {`R$ ${(totalSales ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
-          </SummaryCardValue>
+          <SummaryCardTitle>Total de Caixas Separadas</SummaryCardTitle>
+          <SummaryCardValue>{totalCaixas}</SummaryCardValue>
         </SummaryCard>
 
         <SummaryCard>
           <SummaryCardIcon>
-            <DollarSign />
+            <Activity />
           </SummaryCardIcon>
-          <SummaryCardTitle>Total de vendas</SummaryCardTitle>
-          <SummaryCardValue>R$500,00</SummaryCardValue>
+          <SummaryCardTitle>Total de Tasks</SummaryCardTitle>
+          <SummaryCardValue>{totalTasks}</SummaryCardValue>
         </SummaryCard>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
         <SummaryCard>
           <SummaryCardIcon>
-            <CircleDollarSign />
+            <TableColumnsSplit />
           </SummaryCardIcon>
-          <SummaryCardTitle>Vendas totais</SummaryCardTitle>
-          <SummaryCardValue>1050</SummaryCardValue>
+          <SummaryCardTitle>Segmento que mais esteve</SummaryCardTitle>
+          <SummaryCardValue>
+            {mostFrequentWorkLocation || "N/A"}
+          </SummaryCardValue>
         </SummaryCard>
 
         <SummaryCard>
           <SummaryCardIcon>
-            <PackageIcon />
+            <User />
           </SummaryCardIcon>
-          <SummaryCardTitle>Total em Estoque</SummaryCardTitle>
-          <SummaryCardValue>20.000</SummaryCardValue>
+          <SummaryCardTitle>Usuário</SummaryCardTitle>
+          <SummaryCardValue>{userName}</SummaryCardValue>
         </SummaryCard>
 
         <SummaryCard>
