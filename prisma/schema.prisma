@@ -8,7 +8,7 @@ datasource db {
 }
 
 model ActivityData {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   task_id         String?
   tran_type       String?
   tran_code       String?
@@ -30,6 +30,7 @@ model ActivityData {
   user_name       String?
   wjxbfs1         String?
   wjxbfs2         String?
+  createdAt       DateTime @map("createdat") @db.Timestamp(6)
 
   @@map("activity_data")
 }

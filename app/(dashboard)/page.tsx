@@ -21,6 +21,7 @@ import {
 } from "./_components/summary-card";
 import { ComboboxUsers } from "./_components/combobox-users";
 import { useEffect, useState } from "react";
+import { DatePickerWithRange } from "./_components/date-picker-with-range";
 
 export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -28,13 +29,18 @@ export default function Home() {
   const [totalTasks, setTotalTasks] = useState(0);
   const [mostFrequentWorkLocation, setMostFrequentWorkLocation] = useState("");
   const [userName, setUserName] = useState("Selecione um usuário");
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(
+    null,
+  );
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !dateRange) return;
 
     const fetchUserData = async () => {
       try {
-        const res = await fetch(`/api/dashboard?userId=${userId}`);
+        const res = await fetch(
+          `/api/dashboard?userId=${userId}&startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`,
+        );
         const data = await res.json();
 
         if (!res.ok) {
@@ -49,7 +55,7 @@ export default function Home() {
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [userId, dateRange]);
 
   return (
     <div className="bg-white-500 w-full space-y-8 p-8">
@@ -59,7 +65,7 @@ export default function Home() {
           <HeaderTitle>Dashboard</HeaderTitle>
         </HeaderLeft>
         <HeaderRight>
-          {/* Componente de calendário */}
+          <DatePickerWithRange onDateChange={setDateRange} />
           <ComboboxUsers
             onUserSelect={(id, name) => {
               setUserId(id);
