@@ -1,3 +1,4 @@
+import { excelSerialToDate } from "@/app/_lib/excel-serial";
 import { prisma } from "@/app/_lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    const [allRecords, taskCount, mostWorkedLocation] = await Promise.all([
+    const [allRecordsRaw, taskCount, mostWorkedLocation] = await Promise.all([
       prisma.activityData.findMany({
         where: {
           user_id: userId,
@@ -32,6 +33,11 @@ export async function GET(req: Request) {
       getTaskIdByUser(userId, start, end),
       getMostWorkedLocation(userId, start, end),
     ]);
+
+    const allRecords = allRecordsRaw.map((record) => ({
+      ...record,
+      convertedDate: excelSerialToDate(Number(record.custcol_20)),
+    }));
 
     return NextResponse.json({ allRecords, taskCount, mostWorkedLocation });
   } catch (error) {
