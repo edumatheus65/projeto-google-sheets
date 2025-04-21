@@ -25,12 +25,11 @@ model ActivityData {
   sku_desc0       String?
   code_id         String?
   code_desc0      String?
-  custcol_20      String?
+  createdAt       DateTime @map("custcol_20")
   user_id         String?
   user_name       String?
   wjxbfs1         String?
   wjxbfs2         String?
-  createdAt       DateTime @map("createdat") @db.Timestamp(6)
 
   @@map("activity_data")
 }
