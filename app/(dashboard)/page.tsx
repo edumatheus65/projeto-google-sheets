@@ -22,6 +22,13 @@ import {
 import { ComboboxUsers } from "./_components/combobox-users";
 import { useEffect, useState } from "react";
 import { DatePickerWithRange } from "./_components/date-picker-with-range";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../_components/ui/card";
+import { ActivityChart } from "./_components/activity-chart";
 
 export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -31,6 +38,9 @@ export default function Home() {
   const [userName, setUserName] = useState("Selecione um usuário");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(
     null,
+  );
+  const [chartData, setChartData] = useState<{ date: string; total: number }[]>(
+    [],
   );
 
   useEffect(() => {
@@ -49,6 +59,7 @@ export default function Home() {
         setTotalCaixas(data.allRecords.length);
         setTotalTasks(data.taskCount);
         setMostFrequentWorkLocation(data.mostWorkedLocation);
+        setChartData(data.activityChartData);
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
       }
@@ -120,6 +131,15 @@ export default function Home() {
           <SummaryCardValue>20.000</SummaryCardValue>
         </SummaryCard>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Atividades por Dia</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActivityChart data={chartData} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { excelSerialToDate } from "@/app/_lib/excel-serial";
 import { prisma } from "@/app/_lib/prisma";
+import { ChartResult } from "@/app/_lib/types/charts";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -20,26 +20,28 @@ export async function GET(req: Request) {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    const [allRecordsRaw, taskCount, mostWorkedLocation] = await Promise.all([
-      prisma.activityData.findMany({
-        where: {
-          user_id: userId,
-          createdAt: {
-            gte: start,
-            lte: end,
+    const [allRecords, taskCount, mostWorkedLocation, activityChartData] =
+      await Promise.all([
+        prisma.activityData.findMany({
+          where: {
+            user_id: userId,
+            createdAt: {
+              gte: start,
+              lte: end,
+            },
           },
-        },
-      }),
-      getTaskIdByUser(userId, start, end),
-      getMostWorkedLocation(userId, start, end),
-    ]);
+        }),
+        getTaskIdByUser(userId, start, end),
+        getMostWorkedLocation(userId, start, end),
+        getActivityChartData(userId, start, end),
+      ]);
 
-    const allRecords = allRecordsRaw.map((record) => ({
-      ...record,
-      convertedDate: excelSerialToDate(Number(record.custcol_20)),
-    }));
-
-    return NextResponse.json({ allRecords, taskCount, mostWorkedLocation });
+    return NextResponse.json({
+      allRecords,
+      taskCount,
+      mostWorkedLocation,
+      activityChartData,
+    });
   } catch (error) {
     console.error("Error fetching dashboard data", error);
     return NextResponse.json(
@@ -106,3 +108,25 @@ export const getMostWorkedLocation = async (
 
   return "Outro";
 };
+
+export async function getActivityChartData(
+  userId: string,
+  startDate: Date,
+  endDate: Date,
+) {
+  const result = await prisma.$queryRaw<ChartResult[]>`
+        SELECT
+            DATE("custcol_20") as date,
+            COUNT(*) as total
+        FROM activity_data
+        WHERE user_id = ${userId}
+        AND custcol_20 BETWEEN ${startDate} AND ${endDate}
+        GROUP BY DATE("custcol_20")
+        ORDER BY date ASC 
+        `;
+
+  return result.map((item) => ({
+    date: item.date.toISOString().split("T")[0],
+    total: Number(item.total),
+  }));
+}
