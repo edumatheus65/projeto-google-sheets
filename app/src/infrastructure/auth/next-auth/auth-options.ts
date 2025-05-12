@@ -1,4 +1,5 @@
-import { AuthOptions } from "next-auth";
+import { Account, AuthOptions, Profile, Session, User } from "next-auth";
+import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: AuthOptions = {
@@ -9,17 +10,30 @@ export const authOptions: AuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  // callbacks: {
-  //    async jwt({ token}) {
-  //     return token;
-  //    },
-  //    async session({ session}) {
-  //     if (session.user) {
-  //         session.user as any).avatarUrl = session.user.image
-  //     }
-  //     return session
-  //    }
-  // },
+  callbacks: {
+    async jwt({
+      token,
+      user,
+      account: _account,
+      profile: _profile,
+    }: {
+      token: JWT;
+      user?: User;
+      account?: Account | null;
+      profile?: Profile;
+    }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }: { session: Session; token: JWT }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
+  },
   // pages: {
   //     signIn: '/login',
   //     error: '/auth/error',
